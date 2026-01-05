@@ -23,7 +23,9 @@ def char_maps(text: str):
     #  It's best if you also sort the chars before assigning indices, so that
     #  they're in lexical order.
     # ====== YOUR CODE: ======
-    pass
+    chars = sorted(set(text))
+    char_to_idx = {char: i for i, char in enumerate(chars)}
+    idx_to_char = {i: char for i, char in enumerate(chars)}
     # ========================
     return char_to_idx, idx_to_char
 
@@ -39,7 +41,9 @@ def remove_chars(text: str, chars_to_remove):
     """
     # TODO: Implement according to the docstring.
     # ====== YOUR CODE: ======
-    pass
+    pattern = "[" + re.escape("".join(chars_to_remove)) + "]"
+    text_clean = re.sub(pattern, "", text)
+    n_removed = len(text) - len(text_clean)
     # ========================
     return text_clean, n_removed
 
@@ -58,8 +62,16 @@ def chars_to_onehot(text: str, char_to_idx: dict) -> Tensor:
     returned tensor will be torch.int8.
     """
     # TODO: Implement the embedding.
+    #acbd --> 1 3 2 4
     # ====== YOUR CODE: ======
-    pass
+    N = len(text)
+    D = len(char_to_idx)
+    index = torch.empty(N, dtype=torch.long)
+    for i, ch in enumerate (text):
+        index[i] = char_to_idx[ch]
+
+    result = torch.zeros(N,D, dtype=torch.int8)
+    result = result.scatter(1, index.unsqueeze(1), 1) 
     # ========================
     return result
 
@@ -76,14 +88,19 @@ def onehot_to_chars(embedded_text: Tensor, idx_to_char: dict) -> str:
     """
     # TODO: Implement the reverse-embedding.
     # ====== YOUR CODE: ======
-    pass
+
+    index =  torch.argmax(embedded_text, dim=1)
+    chars = []
+    for i in index:
+        chars.append(idx_to_char[int(i)])
+    result = "".join(chars)
     # ========================
     return result
 
 
 def chars_to_labelled_samples(text: str, char_to_idx: dict, seq_len: int, device="cpu"):
     """
-    Splits a char sequence into smaller sequences of labelled samples.
+    Splits a char sequence into smaller sequences of labelled sample.s
     A sample here is a sequence of seq_len embedded chars.
     Each sample has a corresponding label, which is also a sequence of
     seq_len chars represented as indices. The label is constructed such that
@@ -105,7 +122,30 @@ def chars_to_labelled_samples(text: str, char_to_idx: dict, seq_len: int, device
     #  3. Create the labels tensor in a similar way and convert to indices.
     #  Note that no explicit loops are required to implement this function.
     # ====== YOUR CODE: ======
-    pass
+
+    embedded = chars_to_onehot(text, char_to_idx).to(device)
+
+    #convert text to indices
+    indices = torch.tensor(
+        [char_to_idx[c] for c in text],
+        dtype=torch.long,
+        device=device,
+    )
+
+    #inputs and labels:
+    inputs = embedded[:-1]#ignore the last
+    labels = indices[1:]#shift to the left
+
+    #remove the last part that doesnt fit seq_len
+    seq_len_max = (inputs.size(0) // seq_len) * seq_len
+    inputs = inputs[:seq_len_max]
+    labels = labels[:seq_len_max]
+
+    V = inputs.size(1)
+    N = seq_len_max // seq_len
+
+    samples = inputs.view(N, seq_len, V)
+    labels = labels.view(N,seq_len)
     # ========================
     return samples, labels
 
@@ -189,7 +229,17 @@ class SequenceBatchSampler(torch.utils.data.Sampler):
         #  you can drop it.
         idx = None  # idx should be a 1-d list of indices.
         # ====== YOUR CODE: ======
-        pass
+        L = len(self.dataset)
+        B = self.batch_size
+        
+        num_batches = L // B
+        L_eff = num_batches * B
+
+        indices = torch.arange(L_eff)
+
+        indices = indices.view(B, num_batches).t()
+        idx = indices.flatten().tolist()
+
         # ========================
         return iter(idx)
 
