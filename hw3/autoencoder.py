@@ -19,13 +19,13 @@ class EncoderCNN(nn.Module):
         #  use pooling or only strides, use any activation functions,
         #  use BN or Dropout, etc.
         # ====== YOUR CODE: ======
-        modules.append(nn.Conv2d(in_channels, 64, kernel_size=5, stride=2, padding=2))
+        modules.append(nn.Conv2d(in_channels, 64, kernel_size=4, stride=2, padding=1))
         modules.append(nn.BatchNorm2d(64))
         modules.append(nn.LeakyReLU(0.2))
-        modules.append(nn.Conv2d(64, 128, kernel_size=5, stride=2, padding=2))
+        modules.append(nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1))
         modules.append(nn.BatchNorm2d(128))
         modules.append(nn.LeakyReLU(0.2))
-        modules.append(nn.Conv2d(128, out_channels, kernel_size=5, stride=2, padding=2))
+        modules.append(nn.Conv2d(128, out_channels, kernel_size=4, stride=2, padding=1))
         modules.append(nn.BatchNorm2d(out_channels))
         modules.append(nn.LeakyReLU(0.2))
         # ========================
@@ -50,13 +50,13 @@ class DecoderCNN(nn.Module):
         #  output should be a batch of images, with same dimensions as the
         #  inputs to the Encoder were.
         # ====== YOUR CODE: ======
-        modules.append(nn.ConvTranspose2d(in_channels, 128, kernel_size=5, stride=2, padding=2, output_padding=1))
+        modules.append(nn.ConvTranspose2d(in_channels, 128, kernel_size=4, stride=2, padding=1))
         modules.append(nn.BatchNorm2d(128))
         modules.append(nn.ReLU())
-        modules.append(nn.ConvTranspose2d(128, 64, kernel_size=5, stride=2, padding=2, output_padding=1))
+        modules.append(nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1))
         modules.append(nn.BatchNorm2d(64))
         modules.append(nn.ReLU())
-        modules.append(nn.ConvTranspose2d(64, out_channels, kernel_size=5, stride=2, padding=2, output_padding=1))
+        modules.append(nn.ConvTranspose2d(64, out_channels, kernel_size=4, stride=2, padding=1))
         # ========================
         self.cnn = nn.Sequential(*modules)
 

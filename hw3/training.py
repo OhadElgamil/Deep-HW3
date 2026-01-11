@@ -314,7 +314,7 @@ class VAETrainer(Trainer):
         vae = self.model
         self.optimizer.zero_grad()
         x_rec, z_mu, z_log_sigma2 = vae(x)
-        loss, data_loss, kldiv_loss = self.loss_fn(x, x_rec, z_mu, z_log_sigma2, self.x_sigma2)
+        loss, data_loss, kldiv_loss = self.loss_fn(x, x_rec, z_mu, z_log_sigma2)
         loss.backward()
         self.optimizer.step()
         # ========================
@@ -330,7 +330,7 @@ class VAETrainer(Trainer):
             # ====== YOUR CODE: ======
             vae = self.model
             x_rec, z_mu, z_log_sigma2 = vae(x)
-            loss, data_loss, kldiv_loss = self.loss_fn(x, x_rec, z_mu, z_log_sigma2, self.x_sigma2)
+            loss, data_loss, kldiv_loss = self.loss_fn(x, x_rec, z_mu, z_log_sigma2)
             # ========================
 
         return BatchResult(loss.item(), 1 / data_loss.item())
