@@ -94,7 +94,28 @@ class Trainer(abc.ABC):
             #  - Implement early stopping. This is a very useful and
             #    simple regularization technique that is highly recommended.
             # ====== YOUR CODE: ======
-            pass
+            train_result = self.train_epoch(dl_train, verbose=verbose, **kw)
+            test_result = self.test_epoch(dl_test, verbose=verbose, **kw)
+
+            train_epoch_loss = float(sum(train_result.losses)) / len(train_result.losses)
+            test_epoch_loss = float(sum(test_result.losses)) / len(test_result.losses)
+
+            train_loss.append(train_epoch_loss)
+            train_acc.append(train_result.accuracy)
+            test_loss.append(test_epoch_loss)
+            test_acc.append(test_result.accuracy)
+
+            actual_num_epochs = epoch + 1
+            if best_acc is None or test_result.accuracy > best_acc:
+                best_acc = test_result.accuracy
+                epochs_without_improvement = 0
+                if checkpoints is not None:
+                    save_checkpoint = True
+            else:
+                epochs_without_improvement += 1
+                if early_stopping is not None and epochs_without_improvement >= early_stopping:
+                    break
+
             # ========================
 
             # Save model checkpoint if requested
@@ -222,14 +243,14 @@ class RNNTrainer(Trainer):
     def train_epoch(self, dl_train: DataLoader, **kw):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
-        pass
+        self.hidden_state = None
         # ========================
         return super().train_epoch(dl_train, **kw)
 
     def test_epoch(self, dl_test: DataLoader, **kw):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
-        pass
+        self.hidden_state = None
         # ========================
         return super().test_epoch(dl_test, **kw)
 
@@ -247,7 +268,14 @@ class RNNTrainer(Trainer):
         #  - Update params
         #  - Calculate number of correct char predictions
         # ====== YOUR CODE: ======
-        pass
+        self.optimizer.zero_grad()
+        h_in = self.hidden_state.detach() if self.hidden_state is not None else None
+        y_pred, self.hidden_state = self.model(x, h_in)
+        loss = self.loss_fn(y_pred.transpose(1, 2), y)
+        loss.backward()
+        self.optimizer.step()
+        indices_pred = torch.argmax(y_pred, dim=2)
+        num_correct = (indices_pred == y).sum().cpu()
         # ========================
 
         # Note: scaling num_correct by seq_len because each sample has seq_len
@@ -267,7 +295,11 @@ class RNNTrainer(Trainer):
             #  - Loss calculation
             #  - Calculate number of correct predictions
             # ====== YOUR CODE: ======
-            pass
+            h_in = self.hidden_state if self.hidden_state is not None else None
+            y_pred, self.hidden_state = self.model(x, h_in)
+            loss = self.loss_fn(y_pred.transpose(1, 2), y)
+            indices_pred = torch.argmax(y_pred, dim=2)
+            num_correct = (indices_pred == y).sum().cpu()
             # ========================
 
         return BatchResult(loss.item(), num_correct.item() / seq_len)
@@ -336,7 +368,10 @@ class TransformerEncoderTrainer(Trainer):
             # TODO:
             #  fill out the testing loop.
             # ====== YOUR CODE: ======
-            pass
+            pred = self.model(input_ids, attention_mask).to(self.device)
+            loss = self.loss_fn(pred.squeeze(-1), label)
+            y_t = torch.round(torch.sigmoid(pred)).float()
+            num_correct = (y_t.squeeze(-1) == label).sum()
             # ========================
 
 

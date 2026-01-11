@@ -161,7 +161,9 @@ def hot_softmax(y, dim=0, temperature=1.0):
     """
     # TODO: Implement based on the above.
     # ====== YOUR CODE: ======
-    pass
+    y_scaled = y / temperature
+    result = torch.softmax(y_scaled, dim=dim)
+    return result
     # ========================
 
 
@@ -196,7 +198,20 @@ def generate_from_model(model, start_sequence, n_chars, char_maps, T):
     #  necessary for this. Best to disable tracking for speed.
     #  See torch.no_grad().
     # ====== YOUR CODE: ======
-    pass
+    h = None
+    input_seq = chars_to_onehot(start_sequence, char_to_idx).unsqueeze(0).to(device).float()
+    with torch.no_grad():
+        for i in range(n_chars - len(start_sequence)):
+            output, h = model(input_seq, h)
+            last_output = output[:, -1, :].squeeze(0)
+
+            probs = hot_softmax(last_output, dim=0, temperature=T)
+
+            sampled_idx = torch.multinomial(probs, num_samples=1).item()
+            sampled_char = idx_to_char[sampled_idx]
+            out_text += sampled_char
+
+            input_seq = chars_to_onehot(sampled_char, char_to_idx).unsqueeze(0).to(device).float()
     # ========================
 
     return out_text
@@ -268,10 +283,28 @@ class MultilayerGRU(nn.Module):
         self.out_dim = out_dim
         self.h_dim = h_dim
         self.n_layers = n_layers
-        self.layer_params = []
-
+        self.layer_params = nn.ModuleList()
+        
         # ====== YOUR CODE: ======
-        pass
+        for layer in range(n_layers):
+            input_dim = in_dim if layer == 0 else h_dim
+            
+            dropout_layer = nn.Dropout(0) if layer==0 else nn.Dropout(dropout)
+    
+            update_wx = nn.Linear(input_dim, h_dim)
+            update_wh = nn.Linear(h_dim, h_dim, bias=False)
+            reset_wx = nn.Linear(input_dim, h_dim)
+            reset_wh = nn.Linear(h_dim, h_dim, bias=False)
+            candidate_wx = nn.Linear(input_dim, h_dim)
+            candidate_wh = nn.Linear(h_dim, h_dim, bias=False)
+
+            self.layer_params.append(nn.ModuleList([
+                update_wx, update_wh, reset_wx, reset_wh, candidate_wx, candidate_wh, dropout_layer
+            ]))
+
+        # Output layer
+        output_layer = nn.Linear(h_dim, out_dim)
+        self.layer_params.append(nn.ModuleList([output_layer]))
         # ========================
 
     def forward(self, input: Tensor, hidden_state: Tensor = None):
@@ -290,7 +323,6 @@ class MultilayerGRU(nn.Module):
         (B, L, H) as above.
         """
         batch_size, seq_len, _ = input.shape
-
         layer_states = []
         for i in range(self.n_layers):
             if hidden_state is None:
@@ -317,6 +349,8 @@ class MultilayerGRU(nn.Module):
                 if layer_index > 0:
                     current_input = layer_states[layer_index - 1]
 
+                x = update_wx(current_input)
+                z = update_wh(prev_state)
                 update_gate = activation_sigmoid(update_wx(current_input) + update_wh(prev_state))
                 reset_gate = activation_sigmoid(reset_wx(current_input) + reset_wh(prev_state))
                 candidate_state = activation_tanh(candidate_wx(current_input) + candidate_wh(reset_gate * prev_state))
