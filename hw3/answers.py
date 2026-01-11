@@ -22,7 +22,14 @@ def part1_rnn_hyperparams():
     )
     # TODO: Set the hyperparameters to train the model.
     # ====== YOUR CODE: ======
-    pass
+    hypers['batch_size'] = 64
+    hypers['seq_len'] = 128
+    hypers['h_dim'] = 128
+    hypers['n_layers'] = 2
+    hypers['dropout'] = 2e-1
+    hypers['learn_rate'] = 1e-3
+    hypers['lr_sched_factor'] = 5e-1
+    hypers['lr_sched_patience'] = 3
     # ========================
     return hypers
 
@@ -32,7 +39,7 @@ def part1_generation_params():
     temperature = 0.0001
     # TODO: Tweak the parameters to generate a literary masterpiece.
     # ====== YOUR CODE: ======
-    pass
+    start_seq = "To be, or not to be, that is the question.\n"
     # ========================
     return start_seq, temperature
 
@@ -107,7 +114,13 @@ def part3_transformer_encoder_hyperparams():
 
     # TODO: Tweak the hyperparameters to train the transformer encoder.
     # ====== YOUR CODE: ======
-    pass
+    hypers['embed_dim'] = 128
+    hypers['num_heads'] = 8
+    hypers['num_layers'] = 2
+    hypers['hidden_dim'] = 256
+    hypers['window_size'] = 64
+    hypers['droupout'] = 0.2
+    hypers['lr'] = 3e-4
     # ========================
     return hypers
 
