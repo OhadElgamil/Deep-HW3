@@ -85,19 +85,53 @@ def part2_vae_hyperparams():
 
 
 part2_q1 = r"""
-**Your answer:**
+The hyperparameter $\sigma^2_x$ represents the assumed variance of the observation noise in the probabilistic decoder. In practical terms, it controls the between the reconstruction accuracy and the latent space regularization.
+
+By tuning $\sigma^2_x$, we directly affect the penalty for reconstruction errors:
+
+* **High Value:**
+    A high variance implies we "trust" the pixel values less. This scales down the reconstruction loss, causing the model to prioritize the KL-divergence term (regularization).
+    Therefore, the model produces blurry images because it is not strictly penalized for losing high-frequency details, preferring a smooth latent space instead.
+
+* **Low Value:**
+    A low variance implies we demand high precision. This scales up the reconstruction loss, forcing the model to prioritize pixel-perfect accuracy over the KL prior.
+    Therefore, the model produces sharp, detailed images. However, setting this too low can lead to overfitting or an unstable latent space (approaching a deterministic Autoencoder).
 """
 
 part2_q2 = r"""
-**Your answer:**
+The VAE loss function combines two conflicting goals:
+
+**1. Reconstruction Loss**
+* Purpose: Measures the pixel-wise difference between the input image $x$ and the reconstructed image $x'$.
+* Role: Forces the Decoder to learn how to rebuild the image from the compressed latent vector $z$. Without this, the output would just be noise.
+
+**2. KL Divergence Loss**
+* Purpose: Measures the difference between our learned latent distribution $q(z|x)$ and a standard Gaussian prior $p(z) = \mathcal{N}(0, I)$.
+* Role: Acts as a regularizer. It prevents the Encoder from "cheating" by mapping images to far-away, isolated points. It forces the latent variables to stay close to 0 and follow a known distribution.
+
+---
+
+**Effect on Latent Space**
+The KL term forces the latent space to be continuous and dense.
+Instead of memorizing data points as isolated spikes (like standard Autoencoders), the VAE is forced to map inputs to overlapping probability clouds centered at the origin.
+
+**Benefit**
+The main benefit is generative capability:
+1.  Valid Sampling: Since we forced the space to look like a standard Normal distribution, we can simply pick a random vector from $\mathcal{N}(0, I)$, feed it to the decoder, and get a valid image.
+2.  Smooth Interpolation: Because the space is continuous, moving slightly in the latent space results in smooth changes in the image rather than sudden jumps.
 """
 
 part2_q3 = r"""
-**Your answer:**
+We start by maximizing the evidence distribution $p_{\theta}(\mathbf{x})$ because this corresponds to the principle of Maximum Likelihood Estimation (MLE), which aims to find the model parameters that maximize the 
+probability of observing our actual training data. However, directly computing this evidence is intractable because it requires marginalizing over the latent variables, $p_{\theta}(\mathbf{x}) = \int p_{\theta}(\mathbf{x}|\mathbf{z})p(\mathbf{z})d\mathbf{z}$, 
+which involves an impossible integral for complex neural networks. Therefore, since we cannot maximize the evidence directly, we derive and maximize a tractable lower bound known as ELBO. Optimizing this lower bound guarantees that we are also increasing the 
+true log-likelihood of the data.
 """
 
 part2_q4 = r"""
-**Your answer:**
+We model the log-variance $\log(\sigma^2_{\alpha})$ instead of the variance directly to ensure numerical stability and simplify the optimization process. Since a variance must always be strictly non-negative ($\sigma^2 \ge 0$), directly predicting it would 
+require constraining the network's output to prevent invalid negative values. By predicting the logarithm, the network can output values in the entire real number range $(-\infty, \infty)$. Exponentiating this output guarantees a positive variance, allowing 
+the optimizer to learn unconstrained weights without worrying about boundary conditions.
 """
 
 
