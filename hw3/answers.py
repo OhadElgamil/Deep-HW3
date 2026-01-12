@@ -45,11 +45,18 @@ def part1_generation_params():
 
 
 part1_q1 = r"""
-**Your answer:**
+We split the corpus into sequences mainly because training on the whole text at once is practically impossible due to memory and optimization issues. 
+If we tried to treat the entire corpus as one long sequence, we would need to unroll the network for millions of time steps, 
+which would crash the GPU memory since backpropagation needs to store values for every step. Additionally, gradients would likely vanish or explode 
+over such a long distance, making it impossible for the model to learn anything useful. By splitting the text into shorter chunks, we can use Truncated 
+Backpropagation Through Time to update the weights frequently and keep the gradients stable while staying within memory limits.
 """
 
 part1_q2 = r"""
-**Your answer:**
+The model shows long-term memory because we manually propagate the hidden state from one batch to the next without resetting it to zero. 
+Even though we stop the gradient calculation at the end of each short sequence to save memory, the actual memory of the network (meaning the hidden state $h$) 
+is passed forward as the initial state for the next batch. Since we set up our data loader to ensure that the sequences in the next batch continue exactly where 
+the previous ones left off, the model effectively keeps a running context of the text it has seen so far, allowing it to remember information from way back in the corpus.
 """
 
 part1_q3 = r"""
